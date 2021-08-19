@@ -1,106 +1,98 @@
-import React, { useState } from "react";
-import {useDispatch} from 'react-redux'
-import {Calendar, momentLocalizer} from "react-big-calendar";
+import React, { useState } from 'react';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import { useDispatch, useSelector } from 'react-redux';
+import moment from 'moment';
 
-//libreria para fechas y horas 
-import moment from "moment";
+import { Navbar } from '../ui/Navbar';
+import { messages } from '../../helpers/calendar-messages-es';
+import { CalendarEvent } from './CalendarEvent';
+import { CalendarModal } from './CalendarModal';
 
-import { Navbar } from "../ui/Navbar";
+import { uiOpenModal } from '../../actions/ui';
 
-//importacion de la configuracion en español de los mensajes
-import {messages} from "../../helpers/calendar-messages-es";
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'moment/locale/es';
+import { eventSetActive, eventClearActiveEvent } from '../../actions/events';
+import { AddNewFab } from '../ui/AddNewFab';
+import {DeleteEventFab} from '../ui/DeleteEventFab';
 
-import "react-big-calendar/lib/css/react-big-calendar.css";
+moment.locale('es');
 
-//importacion de idioma español
-import "moment/locale/es";
-import { CalendarEvent } from "./CalendarEvent";
-import { CalendarModal } from "./CalendarModal";
-import { uiOpenModal } from "../../actions/ui";
-import {eventSetActive} from "../../actions/events";
-import { AddNewFab } from "../ui/AddNewFab";
-
-const localizer = momentLocalizer(moment); // or globalizeLocalizer
-
-//se define el idioma en español
-moment.locale("es");
-
-const events = [{
-    title: "Curso de react",
-    start: moment().toDate(), // new date
-    end:  moment().add(2,"hours").toDate(), 
-    bgcolor: "#fafafa",
-    user: {
-        _id: "123",
-        name: "Marcela"
-    }
-}]
+const localizer = momentLocalizer(moment)
 
 export const CalendarScreen = () => {
 
     const dispatch = useDispatch();
+    const { events, activeEvent } = useSelector( state => state.calendar );
 
-    const [lastView, setLastView] = useState(localStorage.getItem("lastView") || "month");
+    const [lastView, setLastView] = useState( localStorage.getItem('lastView') || 'month' );
+
 
     const onDoubleClick = (e) => {
-        dispatch(uiOpenModal());
-    };
-    
-    const onSelectEvent= (e) => {
-        dispatch(eventSetActive(e));
-        dispatch(uiOpenModal());
-        
-    };
-    
-    const onViewChange= (e) => {
+        // console.log(e);
+        dispatch( uiOpenModal() );
+    }
+
+    const onSelectEvent = (e) => {
+        dispatch( eventSetActive( e ) );
+    }
+
+    const onViewChange = (e) => {
         setLastView(e);
-        localStorage.setItem("lastView", e);
-    };
+        localStorage.setItem('lastView', e);
+    }
 
-   
+    const onSelectSlot = (e) => {
+        // console.log(e)
+        dispatch( eventClearActiveEvent() );
+    }
 
 
-    const eventStyleGetter = (event, start, end, isSelected) => {
-
-        const style= {
-            backgroundColor: "#367CF7",
-            borderRadius: "0px",
+    const eventStyleGetter = ( event, start, end, isSelected ) => {
+        
+        const style = {
+            backgroundColor: '#367CF7',
+            borderRadius: '0px',
             opacity: 0.8,
-            display: "block",
-            color: "white"
+            display: 'block',
+            color: 'white'
         }
-        return{
+
+
+        return {
             style
         }
-        
     };
 
+    return (
+        <div className="calendar-screen">
+            <Navbar />
+            
 
-  return (
-    <div className="calendar-screen">
-      <Navbar />
+            <Calendar
+                localizer={ localizer }
+                events={ events }
+                startAccessor="start"
+                endAccessor="end"
+                messages={ messages }
+                eventPropGetter={ eventStyleGetter }
+                onDoubleClickEvent={ onDoubleClick }
+                onSelectEvent={ onSelectEvent }
+                onView={ onViewChange }
+                onSelectSlot={ onSelectSlot }
+                selectable={ true }
+                view={ lastView }
+                components={{
+                    event: CalendarEvent
+                }}
+            />
 
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        messages={messages}
-        eventPropGetter={eventStyleGetter}
-        onDoubleClickEvent={onDoubleClick}
-        onSelectEvent={onSelectEvent}
-        onView={onViewChange}
-        view={lastView}
-        components={{
-            event: CalendarEvent
-        }}
-      />
+            <AddNewFab />
+            {
+                (activeEvent) && <DeleteEventFab />
+            }
+            <CalendarModal />
 
-      <AddNewFab/>
-
-      <CalendarModal/>
-
-
-    </div>
-  );
-};
+        </div>
+    )
+}
